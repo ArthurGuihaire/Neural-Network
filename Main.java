@@ -23,6 +23,15 @@ public class Main{
             System.out.print("Output: ");
             printarray(output);
         }
+        nnet.write_to_file("wob.txt");
+        nnet = Nnet.create_from_file("wob.txt");
+        for(int i = 0; i<inputs.length; i++){
+            output = nnet.compute_output_values(inputs[i]);
+            System.out.print("Input: ");
+            printarray(inputs[i]);
+            System.out.print("Output: ");
+            printarray(output);
+        }
     }
     public static void printarray(double[] array){
         for(int i=0; i<array.length; i++){

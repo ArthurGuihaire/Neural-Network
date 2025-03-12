@@ -1,11 +1,13 @@
 import java.io.FileWriter;
-import java.util.Scanner;
+import java.io.FileReader;
+import java.io.BufferedReader;
+import java.io.IOException;
 
 public class Nnet {
-    double[][][] connection_weights;
-    double[][] biases;
-    int num_layers;
-    int[] num_nodes;
+    private double[][][] connection_weights;
+    private double[][] biases;
+    private int num_layers;
+    private int[] num_nodes;
     public Nnet(int[] numnodes){
         this.num_layers = numnodes.length;
         this.connection_weights = new double[this.num_layers-1][][];
@@ -24,6 +26,13 @@ public class Nnet {
             }
         }
         this.num_nodes = numnodes;
+    }
+
+    public Nnet(double[][][] weights, double[][] node_biases, int[] shape){
+        this.num_nodes = shape;
+        this.num_layers = shape.length;
+        this.connection_weights = weights;
+        this.biases = node_biases;
     }
 
     public double[] compute_output_values(double[] input){
@@ -105,8 +114,86 @@ public class Nnet {
     }
 
     public void write_to_file(String filename){
-        FileWriter w = new FileWriter(filename);
-        w.write("Hello");
+        try{
+            FileWriter w = new FileWriter(filename);
+            for(int shape_value:this.num_nodes){
+                w.write(shape_value + " ");
+            }
+            w.write("\n");
+            for(int layer=0; layer<connection_weights.length; layer++){
+                for(int i=0; i<connection_weights[layer].length; i++){
+                    for(int j=0; j<connection_weights[layer][i].length; j++){
+                        w.write(String.valueOf(connection_weights[layer][i][j]) + " ");
+                    }
+                    w.write(",");
+                }
+                w.write("\n");
+            }
+            w.write("biases\n");
+            for(int layer=0; layer<biases.length; layer++){
+                for(int i=0; i<biases[layer].length; i++){
+                    w.write(String.valueOf(biases[layer][i]) + " ");
+                }
+                w.write("\n");
+            }
+            w.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static Nnet create_from_file(String filename) {
+        try{
+            BufferedReader w = new BufferedReader(new FileReader(filename));
+            String[] shape_string = w.readLine().split(" ");
+            int[] shape = new int[shape_string.length];
+            for(int i = 0; i<shape_string.length; i++){
+                shape[i] = Integer.valueOf(shape_string[i]);
+            }
+            String line;
+            int num_lines1 = 0;
+            while(!((line = w.readLine()).equals("biases"))){
+                num_lines1++;
+            }
+            int num_lines2 = 0;
+            while((line = w.readLine())!=null){
+                num_lines2++;
+            }
+            w.close();
+            BufferedReader b = new BufferedReader(new FileReader(filename));
+            b.readLine(); // Skip the shape line
+            double[][][] weights = new double[num_lines1][][];
+            String[] array;
+            String[] newarray;
+            for(int line_number = 0; line_number<num_lines1; line_number++){
+                line = b.readLine();
+                array = line.split(" ,");
+                weights[line_number] = new double[array.length][];
+                for(int i = 0; i < array.length; i++){
+                    newarray = array[i].split(" ");
+                    weights[line_number][i] = new double[newarray.length];
+                    for(int j = 0; j < newarray.length; j++){
+                        weights[line_number][i][j] = Double.valueOf(newarray[j]);
+                    }
+                }
+            }
+            b.readLine();
+            double[][] node_biases = new double[num_lines2][];
+            for(int line_number = 0; line_number < num_lines2; line_number++){
+                line = b.readLine();
+                array = line.split(" ");
+                node_biases[line_number] = new double[array.length];
+                for(int i = 0; i < array.length; i++){
+                    node_biases[line_number][i] = Double.valueOf(array[i]);
+                }
+            }
+            b.close();
+            return new Nnet(weights, node_biases, shape);
+
+        } catch(IOException e){
+            e.printStackTrace();
+            return new Nnet(new double[0][0][0], new double[0][0], new int[0]);
+        }
     }
 
     public static double sigmoid(double x){
